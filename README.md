@@ -17,12 +17,14 @@ set yearly money goals, note improvements to focus on, and save every day for ea
 
 ## Screenshots
 
-![Daily Organizer overview](img/1.png)
-![Sections and timeline](img/2.png)
-![Wallet and tasks](img/3.png)
-![Saved days](img/4.png)
-![Multiple tasks](img/5.png)
-![Wallet](img/6.png)
+<p align="center">
+  <img src="img/1.png" width="500" alt=""/>
+  <img src="img/5.png" width="500" alt=""/>
+  <img src="img/2.png" width="500" alt=""/>
+  <img src="img/3.png" width="500" alt=""/>
+  <img src="img/4.png" width="500" alt=""/>
+  <img src="img/6.png" width="500" alt=""/>
+</p>
 
 ## Getting Started
 
