@@ -1,8 +1,12 @@
 # Daily Organizer
 
+👉 [Visit App](https://daily-organizer-do.netlify.app/)
+<br/>
+
 Daily Organizer is a warm, website-like daily planner for building a day that feels intentional. Create
 custom sections, add tasks, celebrate achievements, track income and expenses in a mini wallet,
 set yearly money goals, note improvements to focus on, and save every day for easy look-back.
+
 
 ## Highlights
 
