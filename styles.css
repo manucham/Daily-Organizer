@@ -824,6 +824,30 @@ body {
   font-size: 0.85rem;
 }
 
+.site-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.footer-card {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(31, 43, 42, 0.12);
+  border-radius: 999px;
+  padding: 10px 18px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  box-shadow: 0 10px 22px rgba(31, 43, 42, 0.08);
+}
+
+.footer-heart {
+  color: var(--accent);
+  font-size: 1rem;
+}
+
 .ghost-btn,
 .primary-btn,
 .icon-btn {
