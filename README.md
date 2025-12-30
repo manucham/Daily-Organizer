@@ -1,8 +1,8 @@
 # Daily Organizer
 
 Daily Organizer is a warm, website-like daily planner for building a day that feels intentional. Create
-custom sections, add tasks, check them off, track daily income in a mini wallet, and
-save every day for easy look-back.
+custom sections, add tasks, celebrate achievements, track daily income in a mini wallet, note
+improvements to focus on, and save every day for easy look-back.
 
 ## Highlights
 
@@ -10,6 +10,8 @@ save every day for easy look-back.
 - Task checkoffs with clean, focused layouts
 - Timeline for daily events
 - Daily Wallet to log income sources and totals (LKR)
+- Achievements board to celebrate wins with encouragement
+- Improvements focus prompt for growth-oriented reflection
 - Saved Days history with smooth delete confirmations
 - All data stored locally in the browser
 
@@ -19,6 +21,7 @@ save every day for easy look-back.
 ![Sections and timeline](img/2.png)
 ![Wallet and tasks](img/3.png)
 ![Saved days](img/4.png)
+![Multiple tasks](img/5.png)
 
 ## Getting Started
 

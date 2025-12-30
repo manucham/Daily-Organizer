@@ -90,6 +90,9 @@ const elements = {
   addWalletBtn: document.getElementById("addWalletBtn"),
   walletList: document.getElementById("walletList"),
   walletTotal: document.getElementById("walletTotal"),
+  addAchievementBtn: document.getElementById("addAchievementBtn"),
+  achievementsList: document.getElementById("achievementsList"),
+  improvementsInput: document.getElementById("improvementsInput"),
   historyList: document.getElementById("historyList"),
   confirmOverlay: document.getElementById("confirmOverlay"),
   confirmMessage: document.getElementById("confirmMessage"),
@@ -124,6 +127,14 @@ function init() {
   elements.addEventBtn.addEventListener("click", () => addEvent());
   elements.addSectionBtn.addEventListener("click", () => addSection());
   elements.addWalletBtn.addEventListener("click", () => addWalletEntry());
+  elements.addAchievementBtn.addEventListener("click", () => addAchievement());
+  if (elements.improvementsInput) {
+    elements.improvementsInput.addEventListener("input", (event) => {
+      const day = state.data[state.currentDate];
+      day.improvements = event.target.value;
+      queueSave();
+    });
+  }
 
   setupConfirmModal();
   setupEmojiPicker();
@@ -174,6 +185,14 @@ function ensureDay(date) {
   }
   if (!Array.isArray(day.wallet)) {
     day.wallet = [];
+    needsSave = true;
+  }
+  if (typeof day.improvements !== "string") {
+    day.improvements = "";
+    needsSave = true;
+  }
+  if (!Array.isArray(day.achievements)) {
+    day.achievements = [];
     needsSave = true;
   }
 
@@ -230,6 +249,24 @@ function ensureDay(date) {
     }
   });
 
+  day.achievements = day.achievements.filter(
+    (entry) => entry && typeof entry === "object"
+  );
+  day.achievements.forEach((entry) => {
+    if (!entry.id) {
+      entry.id = newId();
+      needsSave = true;
+    }
+    if (typeof entry.text !== "string") {
+      entry.text = entry.text ? String(entry.text) : "";
+      needsSave = true;
+    }
+    if (typeof entry.highlighted !== "boolean") {
+      entry.highlighted = !!entry.highlighted;
+      needsSave = true;
+    }
+  });
+
   if (needsSave) {
     persistData();
   }
@@ -274,6 +311,8 @@ function renderDay() {
   renderEvents(day.events);
   renderSections(day.sections);
   renderWallet(day.wallet);
+  renderAchievements(day.achievements);
+  renderImprovements(day.improvements);
   renderHistory();
 }
 
@@ -589,6 +628,78 @@ function renderWallet(entries) {
   updateWalletTotal(entries);
 }
 
+function renderAchievements(achievements) {
+  elements.achievementsList.innerHTML = "";
+  if (!achievements.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "Add a win you want to celebrate today.";
+    elements.achievementsList.appendChild(empty);
+    return;
+  }
+
+  achievements.forEach((achievement, index) => {
+    const card = document.createElement("div");
+    card.className = "achievement-card";
+    card.dataset.id = achievement.id;
+    card.style.setProperty("--i", index);
+    card.classList.toggle("highlighted", !!achievement.highlighted);
+
+    const top = document.createElement("div");
+    top.className = "achievement-top";
+
+    const badge = document.createElement("span");
+    badge.className = "achievement-badge";
+    badge.textContent = achievement.highlighted ? "Shining" : "Win";
+
+    const actions = document.createElement("div");
+    actions.className = "achievement-actions";
+
+    const cheerBtn = document.createElement("button");
+    cheerBtn.type = "button";
+    cheerBtn.className = "ghost-btn achievement-cheer";
+    cheerBtn.textContent = achievement.highlighted ? "Celebrated" : "Celebrate";
+    cheerBtn.classList.toggle("active", !!achievement.highlighted);
+    cheerBtn.addEventListener("click", () => {
+      achievement.highlighted = !achievement.highlighted;
+      card.classList.toggle("highlighted", achievement.highlighted);
+      badge.textContent = achievement.highlighted ? "Shining" : "Win";
+      cheerBtn.textContent = achievement.highlighted ? "Celebrated" : "Celebrate";
+      cheerBtn.classList.toggle("active", achievement.highlighted);
+      queueSave();
+    });
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "icon-btn small";
+    deleteBtn.setAttribute("aria-label", "Delete achievement");
+    deleteBtn.textContent = "x";
+    deleteBtn.addEventListener("click", async () => {
+      await removeAchievement(achievement.id);
+    });
+
+    actions.append(cheerBtn, deleteBtn);
+    top.append(badge, actions);
+
+    const text = document.createElement("textarea");
+    text.className = "achievement-text";
+    text.placeholder = "What did you accomplish today?";
+    text.value = achievement.text || "";
+    text.addEventListener("input", (event) => {
+      achievement.text = event.target.value;
+      queueSave();
+    });
+
+    card.append(top, text);
+    elements.achievementsList.appendChild(card);
+  });
+}
+
+function renderImprovements(text) {
+  if (!elements.improvementsInput) return;
+  elements.improvementsInput.value = text || "";
+}
+
 function renderHistory() {
   elements.historyList.innerHTML = "";
   const entries = Object.keys(state.data).sort((a, b) => b.localeCompare(a));
@@ -719,6 +830,20 @@ function addWalletEntry() {
   focusWalletEntry(entry.id);
 }
 
+function addAchievement() {
+  const day = state.data[state.currentDate];
+  const achievement = {
+    id: newId(),
+    text: "",
+    highlighted: false,
+  };
+  day.achievements.unshift(achievement);
+  day.lastUpdated = Date.now();
+  persistData();
+  renderDay();
+  focusAchievement(achievement.id);
+}
+
 async function removeWalletEntry(entryId) {
   if (!(await confirmDeletion("Delete this income entry?"))) return;
   const day = state.data[state.currentDate];
@@ -732,6 +857,17 @@ async function removeEvent(eventId) {
   if (!(await confirmDeletion("Delete this event?"))) return;
   const day = state.data[state.currentDate];
   day.events = day.events.filter((event) => event.id !== eventId);
+  day.lastUpdated = Date.now();
+  persistData();
+  renderDay();
+}
+
+async function removeAchievement(achievementId) {
+  if (!(await confirmDeletion("Delete this achievement?"))) return;
+  const day = state.data[state.currentDate];
+  day.achievements = day.achievements.filter(
+    (entry) => entry.id !== achievementId
+  );
   day.lastUpdated = Date.now();
   persistData();
   renderDay();
@@ -785,6 +921,17 @@ function focusWalletEntry(entryId) {
   const input = target.querySelector(".wallet-input");
   if (input) {
     setTimeout(() => input.focus(), 0);
+  }
+}
+
+function focusAchievement(achievementId) {
+  const target = elements.achievementsList.querySelector(
+    `[data-id="${achievementId}"]`
+  );
+  if (!target) return;
+  const textarea = target.querySelector(".achievement-text");
+  if (textarea) {
+    setTimeout(() => textarea.focus(), 0);
   }
 }
 
