@@ -18,7 +18,7 @@ set yearly money goals, note improvements to focus on, and save every day for ea
 ## Screenshots
 
 <p align="center">
-  <img src="img/1.png" width="500" alt=""/>
+  <img src="img/1.png" width="500" alt="home"/>
   <img src="img/5.png" width="500" alt=""/>
   <img src="img/2.png" width="500" alt=""/>
   <img src="img/3.png" width="500" alt=""/>
