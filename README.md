@@ -13,6 +13,13 @@ save every day for easy look-back.
 - Saved Days history with smooth delete confirmations
 - All data stored locally in the browser
 
+## Screenshots
+
+![Daily Organizer overview](img/1.png)
+![Sections and timeline](img/2.png)
+![Wallet and tasks](img/3.png)
+![Saved days](img/4.png)
+
 ## Getting Started
 
 1. Open `index.html` in your browser.
