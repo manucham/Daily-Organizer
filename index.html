@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Daily Organizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700&family=Space+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="ambient"></div>
+    <div class="page">
+      <header class="site-header">
+        <div class="brand">
+          <div class="brand-mark">DO</div>
+          <div class="brand-text">
+            <p class="brand-name">Daily Organizer</p>
+            <p class="brand-tag">Plan, focus, reflect</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="ghost-btn" id="todayBtn" type="button">Today</button>
+          <span class="save-state" id="saveState">Saved</span>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div class="panel hero-card">
+          <p class="eyebrow">Your day is better when planned!</p>
+          <h1>Build a daily plan with sections you create</h1>
+          <p class="subhead">
+            Add custom sections, jot down tasks, and check them off as you go.
+          </p>
+        </div>
+        <div class="panel date-card">
+          <label class="field-label" for="datePicker">Pick a date</label>
+          <input class="date-input" id="datePicker" type="date" />
+          <div class="day-label" id="dayLabel"></div>
+          <div class="day-stats" id="dayStats"></div>
+        </div>
+      </section>
+
+      <section class="content">
+        <div class="column-stack">
+          <section class="panel timeline-panel">
+            <div class="panel-header">
+              <div>
+                <h2>Timeline</h2>
+                <p>Capture meetings, moments, and daily highlights.</p>
+              </div>
+              <button class="primary-btn" id="addEventBtn" type="button">
+                Add event
+              </button>
+            </div>
+            <div class="events-list" id="eventsList"></div>
+          </section>
+
+          <section class="panel wallet-panel">
+            <div class="panel-header">
+              <div>
+                <h2>Daily Wallet</h2>
+                <p>Track money you receive and where it came from.</p>
+              </div>
+              <button class="primary-btn" id="addWalletBtn" type="button">
+                Add income
+              </button>
+            </div>
+            <div class="wallet-visual">
+              <div class="wallet-chip"></div>
+              <div class="wallet-slot"></div>
+              <div class="wallet-coins">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+            <div class="wallet-total" id="walletTotal"></div>
+            <div class="wallet-list" id="walletList"></div>
+          </section>
+        </div>
+
+        <section class="panel sections-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Sections</h2>
+              <p>Create areas like Office, Study, Fitness, or anything you want.</p>
+            </div>
+            <button class="primary-btn" id="addSectionBtn" type="button">
+              Add section
+            </button>
+          </div>
+          <div class="section-ideas">
+            <p>Quick add:</p>
+            <div class="section-idea-list" id="sectionIdeas"></div>
+          </div>
+          <div class="sections-list" id="sectionsList"></div>
+        </section>
+      </section>
+
+      <section class="panel history-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Saved Days</h2>
+            <p>Revisit your plans and track your progress.</p>
+          </div>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </section>
+    </div>
+    <div class="confirm-overlay" id="confirmOverlay" aria-hidden="true">
+      <div
+        class="confirm-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirmTitle"
+        aria-describedby="confirmMessage"
+      >
+        <div class="confirm-icon">!</div>
+        <h3 class="confirm-title" id="confirmTitle">Confirm delete</h3>
+        <p class="confirm-message" id="confirmMessage"></p>
+        <div class="confirm-actions">
+          <button class="ghost-btn" id="confirmCancelBtn" type="button">
+            Cancel
+          </button>
+          <button class="primary-btn danger" id="confirmOkBtn" type="button">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
