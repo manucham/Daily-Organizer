@@ -580,6 +580,8 @@ body {
   box-shadow: 0 16px 40px rgba(31, 43, 42, 0.08);
   animation: rise 420ms ease both;
   animation-delay: calc(var(--i, 0) * 60ms);
+  overflow: visible;
+  z-index: 0;
 }
 
 .section-card::before {
@@ -598,6 +600,10 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+}
+
+.section-card:focus-within {
+  z-index: 3;
 }
 
 .section-title-row {
@@ -669,20 +675,20 @@ body {
   position: absolute;
   top: calc(100% + 10px);
   left: 0;
-  width: min(240px, 80vw);
+  width: min(320px, 92vw);
   background: #fffaf6;
   border: 1px solid rgba(31, 43, 42, 0.12);
   border-radius: 16px;
-  padding: 10px;
+  padding: 12px;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
-  box-shadow: 0 18px 36px rgba(31, 43, 42, 0.16);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  box-shadow: 0 22px 40px rgba(31, 43, 42, 0.18);
   opacity: 0;
   pointer-events: none;
   transform: translateY(6px) scale(0.98);
   transition: opacity 180ms ease, transform 180ms ease;
-  z-index: 5;
+  z-index: 10;
 }
 
 .emoji-panel.active {
@@ -695,8 +701,8 @@ body {
   border: none;
   background: rgba(255, 255, 255, 0.8);
   border-radius: 10px;
-  padding: 6px;
-  font-size: 1rem;
+  padding: 8px;
+  font-size: 1.05rem;
   cursor: pointer;
   transition: transform var(--transition), background var(--transition);
 }
