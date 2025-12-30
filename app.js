@@ -26,7 +26,7 @@ const sectionPalette = [
   { bg: "#fff3e3", border: "#ead0b6", accent: "#d97a4b" },
 ];
 
-const sectionIdeas = [
+const defaultSectionIdeas = [
   `Travel with bf ${String.fromCodePoint(0x2764, 0xfe0f)}`,
   "Office",
   "Leetcode",
@@ -76,18 +76,34 @@ const emojiOptions = [
   [0x2764, 0xfe0f],
 ];
 
+const walletTypes = [
+  { value: "income", label: "Income" },
+  { value: "expense", label: "Expense" },
+];
+
+const dateKeyRegex = /^\d{4}-\d{2}-\d{2}$/;
+
 const elements = {
   datePicker: document.getElementById("datePicker"),
   dayLabel: document.getElementById("dayLabel"),
   dayStats: document.getElementById("dayStats"),
   saveState: document.getElementById("saveState"),
   todayBtn: document.getElementById("todayBtn"),
+  moneyPill: document.getElementById("moneyPill"),
+  moneyPillValue: document.getElementById("moneyPillValue"),
   addEventBtn: document.getElementById("addEventBtn"),
   eventsList: document.getElementById("eventsList"),
   addSectionBtn: document.getElementById("addSectionBtn"),
   sectionIdeas: document.getElementById("sectionIdeas"),
+  sectionIdeaInput: document.getElementById("sectionIdeaInput"),
+  addIdeaBtn: document.getElementById("addIdeaBtn"),
   sectionsList: document.getElementById("sectionsList"),
-  addWalletBtn: document.getElementById("addWalletBtn"),
+  addIncomeBtn: document.getElementById("addIncomeBtn"),
+  addExpenseBtn: document.getElementById("addExpenseBtn"),
+  walletGoalInput: document.getElementById("walletGoalInput"),
+  walletGoalYear: document.getElementById("walletGoalYear"),
+  walletGoalMeta: document.getElementById("walletGoalMeta"),
+  walletGoalFill: document.getElementById("walletGoalFill"),
   walletList: document.getElementById("walletList"),
   walletTotal: document.getElementById("walletTotal"),
   addAchievementBtn: document.getElementById("addAchievementBtn"),
@@ -113,6 +129,8 @@ let openEmojiPanel = null;
 init();
 
 function init() {
+  ensureWalletGoals();
+  ensureSectionIdeas();
   ensureDay(state.currentDate);
   elements.datePicker.value = state.currentDate;
 
@@ -126,8 +144,34 @@ function init() {
 
   elements.addEventBtn.addEventListener("click", () => addEvent());
   elements.addSectionBtn.addEventListener("click", () => addSection());
-  elements.addWalletBtn.addEventListener("click", () => addWalletEntry());
+  elements.addIncomeBtn.addEventListener("click", () => addWalletEntry("income"));
+  elements.addExpenseBtn.addEventListener("click", () => addWalletEntry("expense"));
   elements.addAchievementBtn.addEventListener("click", () => addAchievement());
+  if (elements.addIdeaBtn && elements.sectionIdeaInput) {
+    elements.addIdeaBtn.addEventListener("click", () => addSectionIdea());
+    elements.sectionIdeaInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        addSectionIdea();
+      }
+    });
+  }
+  if (elements.walletGoalInput) {
+    elements.walletGoalInput.addEventListener("input", (event) => {
+      const year = getYearFromDate(state.currentDate);
+      const rawValue = event.target.value;
+      const sanitized = sanitizeNumberInput(rawValue);
+      if (sanitized !== rawValue) {
+        event.target.value = sanitized;
+      }
+      const parsed = parseFloat(sanitized);
+      const goals = getWalletGoals();
+      goals[year] =
+        sanitized === "" ? "" : Number.isFinite(parsed) ? parsed : "";
+      renderWalletGoal(state.currentDate);
+      queueSave();
+    });
+  }
   if (elements.improvementsInput) {
     elements.improvementsInput.addEventListener("input", (event) => {
       const day = state.data[state.currentDate];
@@ -236,6 +280,10 @@ function ensureDay(date) {
   day.wallet.forEach((entry) => {
     if (!entry.id) {
       entry.id = newId();
+      needsSave = true;
+    }
+    if (entry.type !== "income" && entry.type !== "expense") {
+      entry.type = "income";
       needsSave = true;
     }
     if (typeof entry.source !== "string") {
@@ -469,6 +517,19 @@ function renderSections(sections) {
       toggleEmojiPanel(emojiPanel);
     });
 
+    const headerActions = document.createElement("div");
+    headerActions.className = "section-header-actions";
+
+    const quickAddBtn = document.createElement("button");
+    quickAddBtn.className = "ghost-btn quick-add-btn";
+    quickAddBtn.type = "button";
+    quickAddBtn.addEventListener("click", () => {
+      const added = addSectionIdeaFromTitle(titleInput.value);
+      if (added) {
+        updateQuickAddButton(quickAddBtn, titleInput.value);
+      }
+    });
+
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "icon-btn small";
     deleteBtn.type = "button";
@@ -478,8 +539,15 @@ function renderSections(sections) {
       await removeSection(section.id);
     });
 
+    titleInput.addEventListener("input", () => {
+      updateQuickAddButton(quickAddBtn, titleInput.value);
+    });
+
+    updateQuickAddButton(quickAddBtn, titleInput.value);
+
     titleRow.append(titleInput, emojiBtn, colorInput, emojiPanel);
-    header.append(titleRow, deleteBtn);
+    headerActions.append(quickAddBtn, deleteBtn);
+    header.append(titleRow, headerActions);
 
     const tasksList = document.createElement("div");
     tasksList.className = "tasks-list";
@@ -556,19 +624,43 @@ function renderSections(sections) {
 function renderSectionIdeas() {
   if (!elements.sectionIdeas) return;
   elements.sectionIdeas.innerHTML = "";
-  sectionIdeas.forEach((idea, index) => {
+  const ideas = getSectionIdeas();
+  if (!ideas.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "Add quick ideas that show up here.";
+    elements.sectionIdeas.appendChild(empty);
+    return;
+  }
+
+  ideas.forEach((idea, index) => {
     const color = ideaPalette[index % ideaPalette.length];
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "idea-btn";
-    button.textContent = idea;
+    const chip = document.createElement("div");
+    chip.className = "idea-chip";
     if (color) {
-      button.style.setProperty("--idea-bg", color.bg);
-      button.style.setProperty("--idea-border", color.border);
-      button.style.setProperty("--idea-text", color.text);
+      chip.style.setProperty("--idea-bg", color.bg);
+      chip.style.setProperty("--idea-border", color.border);
+      chip.style.setProperty("--idea-text", color.text);
     }
-    button.addEventListener("click", () => addSection(idea));
-    elements.sectionIdeas.appendChild(button);
+
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "idea-btn";
+    addBtn.textContent = idea;
+    addBtn.addEventListener("click", () => addSection(idea));
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "idea-delete";
+    deleteBtn.setAttribute("aria-label", "Remove quick add item");
+    deleteBtn.textContent = "x";
+    deleteBtn.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      await removeSectionIdea(index);
+    });
+
+    chip.append(addBtn, deleteBtn);
+    elements.sectionIdeas.appendChild(chip);
   });
 }
 
@@ -587,6 +679,23 @@ function renderWallet(entries) {
     const row = document.createElement("div");
     row.className = "wallet-item";
     row.dataset.id = entry.id;
+    row.classList.toggle("expense", entry.type === "expense");
+
+    const typeSelect = document.createElement("select");
+    typeSelect.className = "wallet-type";
+    walletTypes.forEach((type) => {
+      const option = document.createElement("option");
+      option.value = type.value;
+      option.textContent = type.label;
+      typeSelect.appendChild(option);
+    });
+    typeSelect.value = entry.type || "income";
+    typeSelect.addEventListener("change", (event) => {
+      entry.type = event.target.value;
+      row.classList.toggle("expense", entry.type === "expense");
+      updateWalletTotal(entries);
+      queueSave();
+    });
 
     const sourceInput = document.createElement("input");
     sourceInput.className = "wallet-input";
@@ -601,13 +710,18 @@ function renderWallet(entries) {
     const amountInput = document.createElement("input");
     amountInput.className = "wallet-amount";
     amountInput.type = "number";
+    amountInput.inputMode = "decimal";
     amountInput.step = "0.01";
     amountInput.min = "0";
     amountInput.placeholder = "0.00";
     amountInput.value = entry.amount === "" ? "" : entry.amount ?? "";
     amountInput.addEventListener("input", (event) => {
-      const value = event.target.value;
-      entry.amount = value === "" ? "" : Number(value);
+      const rawValue = event.target.value;
+      const sanitized = sanitizeNumberInput(rawValue);
+      if (sanitized !== rawValue) {
+        event.target.value = sanitized;
+      }
+      entry.amount = sanitized === "" ? "" : Number(sanitized);
       updateWalletTotal(entries);
       queueSave();
     });
@@ -615,13 +729,13 @@ function renderWallet(entries) {
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "icon-btn small";
     deleteBtn.type = "button";
-    deleteBtn.setAttribute("aria-label", "Delete income");
+    deleteBtn.setAttribute("aria-label", "Delete entry");
     deleteBtn.textContent = "x";
     deleteBtn.addEventListener("click", async () => {
       await removeWalletEntry(entry.id);
     });
 
-    row.append(sourceInput, amountInput, deleteBtn);
+    row.append(typeSelect, sourceInput, amountInput, deleteBtn);
     elements.walletList.appendChild(row);
   });
 
@@ -702,7 +816,7 @@ function renderImprovements(text) {
 
 function renderHistory() {
   elements.historyList.innerHTML = "";
-  const entries = Object.keys(state.data).sort((a, b) => b.localeCompare(a));
+  const entries = getDateKeys().sort((a, b) => b.localeCompare(a));
 
   if (!entries.length) {
     const empty = document.createElement("div");
@@ -722,6 +836,7 @@ function renderHistory() {
       card.classList.add("active");
     }
 
+    const totals = getWalletTotals(day.wallet || []);
     const openBtn = document.createElement("button");
     openBtn.type = "button";
     openBtn.className = "history-open";
@@ -732,7 +847,7 @@ function renderHistory() {
         day: "numeric",
         year: "numeric",
       })}</div>
-      <div class="history-meta">${day.events.length} events, ${taskStats.total} tasks, ${taskStats.done} done</div>
+      <div class="history-meta">${day.events.length} events, ${taskStats.total} tasks, ${taskStats.done} done | Net ${formatMoney(totals.net)}</div>
     `;
     openBtn.addEventListener("click", () => setCurrentDate(date));
 
@@ -816,10 +931,11 @@ function addEvent() {
   focusEvent(event.id);
 }
 
-function addWalletEntry() {
+function addWalletEntry(type = "income") {
   const day = state.data[state.currentDate];
   const entry = {
     id: newId(),
+    type,
     source: "",
     amount: "",
   };
@@ -845,7 +961,7 @@ function addAchievement() {
 }
 
 async function removeWalletEntry(entryId) {
-  if (!(await confirmDeletion("Delete this income entry?"))) return;
+  if (!(await confirmDeletion("Delete this wallet entry?"))) return;
   const day = state.data[state.currentDate];
   day.wallet = day.wallet.filter((entry) => entry.id !== entryId);
   day.lastUpdated = Date.now();
@@ -878,7 +994,7 @@ async function removeDay(date) {
   delete state.data[date];
   persistData();
   if (date === state.currentDate) {
-    const remaining = Object.keys(state.data).sort((a, b) => b.localeCompare(a));
+    const remaining = getDateKeys().sort((a, b) => b.localeCompare(a));
     const nextDate = remaining[0] || getTodayISO();
     setCurrentDate(nextDate);
   } else {
@@ -1076,17 +1192,214 @@ function countTasks(sections = []) {
   );
 }
 
-function getWalletTotal(entries = []) {
-  return entries.reduce((sum, entry) => {
-    const amount = typeof entry.amount === "number" ? entry.amount : parseFloat(entry.amount);
-    return sum + (Number.isFinite(amount) ? amount : 0);
-  }, 0);
+function getDateKeys() {
+  return Object.keys(state.data).filter((key) => dateKeyRegex.test(key));
+}
+
+function getYearFromDate(date) {
+  if (!date) {
+    return String(new Date().getFullYear());
+  }
+  return date.slice(0, 4);
+}
+
+function ensureWalletGoals() {
+  if (
+    !state.data.__walletGoals ||
+    typeof state.data.__walletGoals !== "object"
+  ) {
+    state.data.__walletGoals = {};
+    persistData();
+  }
+}
+
+function getWalletGoals() {
+  ensureWalletGoals();
+  return state.data.__walletGoals;
+}
+
+function getYearTotals(year) {
+  const totals = { income: 0, expense: 0, net: 0 };
+  getDateKeys().forEach((date) => {
+    if (!date.startsWith(`${year}-`)) return;
+    const day = state.data[date];
+    if (!day) return;
+    const dayTotals = getWalletTotals(day.wallet || []);
+    totals.income += dayTotals.income;
+    totals.expense += dayTotals.expense;
+  });
+  totals.net = totals.income - totals.expense;
+  return totals;
+}
+
+function getAllWalletTotals() {
+  const totals = { income: 0, expense: 0, net: 0 };
+  getDateKeys().forEach((key) => {
+    const day = state.data[key];
+    if (!day) return;
+    const dayTotals = getWalletTotals(day.wallet || []);
+    totals.income += dayTotals.income;
+    totals.expense += dayTotals.expense;
+  });
+  totals.net = totals.income - totals.expense;
+  return totals;
+}
+
+function ensureSectionIdeas() {
+  if (
+    !state.data.__sectionIdeas ||
+    !Array.isArray(state.data.__sectionIdeas)
+  ) {
+    state.data.__sectionIdeas = [...defaultSectionIdeas];
+    persistData();
+  }
+}
+
+function getSectionIdeas() {
+  ensureSectionIdeas();
+  return state.data.__sectionIdeas;
+}
+
+function addSectionIdea() {
+  if (!elements.sectionIdeaInput) return;
+  const value = elements.sectionIdeaInput.value.trim();
+  if (!value) return;
+  addSectionIdeaValue(value);
+  elements.sectionIdeaInput.value = "";
+  elements.sectionIdeaInput.focus();
+}
+
+function addSectionIdeaFromTitle(title) {
+  const value = (title || "").trim();
+  if (!value) return false;
+  return addSectionIdeaValue(value);
+}
+
+function addSectionIdeaValue(value) {
+  const ideas = getSectionIdeas();
+  const normalized = value.toLowerCase();
+  const exists = ideas.some((idea) => idea.toLowerCase() === normalized);
+  if (!exists) {
+    ideas.push(value);
+    persistData();
+    renderSectionIdeas();
+    return true;
+  }
+  return false;
+}
+
+async function removeSectionIdea(index) {
+  const ideas = getSectionIdeas();
+  if (!ideas[index]) return;
+  if (!(await confirmDeletion("Remove this quick add item?"))) return;
+  ideas.splice(index, 1);
+  persistData();
+  renderSectionIdeas();
+}
+
+function updateQuickAddButton(button, title) {
+  if (!button) return;
+  const value = (title || "").trim();
+  if (!value) {
+    button.textContent = "Add title first";
+    button.disabled = true;
+    return;
+  }
+  const ideas = getSectionIdeas();
+  const exists = ideas.some((idea) => idea.toLowerCase() === value.toLowerCase());
+  if (exists) {
+    button.textContent = "In quick add";
+    button.disabled = true;
+  } else {
+    button.textContent = "Add to quick add";
+    button.disabled = false;
+  }
+}
+
+function getWalletTotals(entries = []) {
+  return entries.reduce(
+    (acc, entry) => {
+      const amount =
+        typeof entry.amount === "number" ? entry.amount : parseFloat(entry.amount);
+      const safeAmount = Number.isFinite(amount) ? amount : 0;
+      if (entry.type === "expense") {
+        acc.expense += safeAmount;
+      } else {
+        acc.income += safeAmount;
+      }
+      acc.net = acc.income - acc.expense;
+      return acc;
+    },
+    { income: 0, expense: 0, net: 0 }
+  );
 }
 
 function updateWalletTotal(entries = []) {
   if (!elements.walletTotal) return;
-  const total = getWalletTotal(entries);
-  elements.walletTotal.textContent = `Total: ${formatMoney(total)}`;
+  const totals = getWalletTotals(entries);
+  const netClass = totals.net < 0 ? "negative" : "positive";
+  elements.walletTotal.classList.remove("positive", "negative");
+  elements.walletTotal.classList.add(netClass);
+  elements.walletTotal.innerHTML = `
+    <span class="wallet-total-line primary">
+      <span>Net for day</span>
+      <strong>${formatMoney(totals.net)}</strong>
+    </span>
+    <span class="wallet-total-line">
+      <span>Income</span>
+      <strong>${formatMoney(totals.income)}</strong>
+    </span>
+    <span class="wallet-total-line">
+      <span>Expenses</span>
+      <strong>${formatMoney(totals.expense)}</strong>
+    </span>
+  `;
+  updateMoneyPill();
+  renderWalletGoal(state.currentDate);
+}
+
+function renderWalletGoal(date) {
+  if (
+    !elements.walletGoalInput ||
+    !elements.walletGoalYear ||
+    !elements.walletGoalMeta ||
+    !elements.walletGoalFill
+  ) {
+    return;
+  }
+  const year = getYearFromDate(date);
+  elements.walletGoalYear.textContent = `Year ${year}`;
+  const goals = getWalletGoals();
+  const goalValue = goals[year];
+  elements.walletGoalInput.value =
+    goalValue === undefined || goalValue === "" ? "" : goalValue;
+
+  const totals = getYearTotals(year);
+  const goalNumber =
+    typeof goalValue === "number" ? goalValue : parseFloat(goalValue);
+  const safeGoal = Number.isFinite(goalNumber) ? goalNumber : 0;
+  if (safeGoal > 0) {
+    elements.walletGoalMeta.textContent = `Year total: ${formatMoney(
+      totals.net
+    )} of ${formatMoney(safeGoal)}`;
+    const progress = Math.min(Math.max(totals.net / safeGoal, 0), 1);
+    elements.walletGoalFill.style.width = `${Math.round(progress * 100)}%`;
+  } else {
+    elements.walletGoalMeta.textContent = `Year total: ${formatMoney(
+      totals.net
+    )}`;
+    elements.walletGoalFill.style.width = "0%";
+  }
+}
+
+function updateMoneyPill() {
+  if (!elements.moneyPillValue || !elements.moneyPill) return;
+  const totals = getAllWalletTotals();
+  const net = totals.net;
+  const netClass = net < 0 ? "negative" : "positive";
+  elements.moneyPill.classList.remove("positive", "negative");
+  elements.moneyPill.classList.add(netClass);
+  elements.moneyPillValue.textContent = formatMoney(net);
 }
 
 function formatMoney(amount) {
@@ -1168,4 +1481,14 @@ function hexToRgb(hex) {
 function rgbToHex(rgb) {
   const toHex = (value) => clampChannel(value).toString(16).padStart(2, "0");
   return `#${toHex(rgb.r)}${toHex(rgb.g)}${toHex(rgb.b)}`;
+}
+
+function sanitizeNumberInput(value) {
+  const raw = typeof value === "string" ? value : String(value ?? "");
+  let cleaned = raw.replace(/[^0-9.]/g, "");
+  if (cleaned.includes(".")) {
+    const parts = cleaned.split(".");
+    cleaned = `${parts.shift()}.${parts.join("")}`;
+  }
+  return cleaned;
 }

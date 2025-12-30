@@ -20,11 +20,14 @@
           <div class="brand-mark">DO</div>
           <div class="brand-text">
             <p class="brand-name">Daily Organizer</p>
-            <p class="brand-tag">Plan, focus, reflect</p>
           </div>
         </div>
         <div class="header-actions">
           <button class="ghost-btn" id="todayBtn" type="button">Today</button>
+          <div class="money-pill" id="moneyPill">
+            <span class="money-pill-label">Net to date</span>
+            <span class="money-pill-value" id="moneyPillValue"></span>
+          </div>
           <span class="save-state" id="saveState">Saved</span>
         </div>
       </header>
@@ -33,9 +36,6 @@
         <div class="panel hero-card">
           <p class="eyebrow">Your day is better when planned!</p>
           <h1>Build a daily plan with sections you create</h1>
-          <p class="subhead">
-            Add custom sections, jot down tasks, and check them off as you go.
-          </p>
         </div>
         <div class="panel date-card">
           <label class="field-label" for="datePicker">Pick a date</label>
@@ -64,11 +64,20 @@
             <div class="panel-header">
               <div>
                 <h2>Daily Wallet</h2>
-                <p>Track money you receive and where it came from.</p>
+                <p>Track income, expenses, and where they came from.</p>
               </div>
-              <button class="primary-btn" id="addWalletBtn" type="button">
-                Add income
-              </button>
+              <div class="wallet-actions">
+                <button class="primary-btn" id="addIncomeBtn" type="button">
+                  Add income
+                </button>
+                <button
+                  class="ghost-btn wallet-expense-btn"
+                  id="addExpenseBtn"
+                  type="button"
+                >
+                  Add expense
+                </button>
+              </div>
             </div>
             <div class="wallet-visual">
               <div class="wallet-chip"></div>
@@ -77,6 +86,30 @@
                 <span></span>
                 <span></span>
                 <span></span>
+              </div>
+            </div>
+            <div class="wallet-goal">
+              <div class="wallet-goal-header">
+                <div>
+                  <p class="wallet-goal-label">Yearly money goal</p>
+                  <p class="wallet-goal-year" id="walletGoalYear"></p>
+                </div>
+                <div class="wallet-goal-input-wrap">
+                  <span class="wallet-goal-currency">LKR</span>
+                  <input
+                    class="wallet-goal-input"
+                    id="walletGoalInput"
+                    type="number"
+                    inputmode="decimal"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+              <div class="wallet-goal-meta" id="walletGoalMeta"></div>
+              <div class="wallet-goal-bar">
+                <span id="walletGoalFill"></span>
               </div>
             </div>
             <div class="wallet-total" id="walletTotal"></div>
@@ -93,15 +126,9 @@
                 Add win
               </button>
             </div>
-            <div class="achievements-hero">
-              <p class="achievements-kicker">You are making progress</p>
-              <p class="achievements-note">List one win you are proud of today.</p>
-              <p class="achievements-sub">Small steps count and deserve a spot.</p>
-            </div>
             <div class="improvements-card">
               <div class="improvements-header">
                 <h3>Improvements I should focus on</h3>
-                <p>Write down the area you want to nurture next.</p>
               </div>
               <textarea
                 class="improvements-text"
@@ -126,6 +153,17 @@
           <div class="section-ideas">
             <p>Quick add:</p>
             <div class="section-idea-list" id="sectionIdeas"></div>
+            <div class="quick-add-form">
+              <input
+                class="quick-add-input"
+                id="sectionIdeaInput"
+                type="text"
+                placeholder="Add a new quick add label"
+              />
+              <button class="ghost-btn" id="addIdeaBtn" type="button">
+                Add
+              </button>
+            </div>
           </div>
           <div class="sections-list" id="sectionsList"></div>
         </section>
